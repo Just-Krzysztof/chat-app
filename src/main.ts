@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { ValidationPipe } from '@nestjs/common'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -15,6 +16,14 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config)
     SwaggerModule.setup('api', app, document)
   }
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // removed fileds which are not in DTO
+      forbidNonWhitelisted: true, // throw error when find unknow field
+      transform: true, // convert plain object to class
+    })
+  )
 
   await app.listen(process.env.PORT ?? 5001)
 }
