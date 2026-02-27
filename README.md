@@ -1,98 +1,451 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Chat App
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+[🇵🇱 Polish](#-polish) | [🇬🇧 English](#-english)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🇵🇱 Polish
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Aplikacja czatu w czasie rzeczywistym umożliwiająca komunikację między znajomymi - zarówno w konwersacjach 1:1, jak i grupowych.
 
-## Project setup
+## Tech Stack
 
-```bash
-$ pnpm install
+| Warstwa          | Technologia           |
+| ---------------- | --------------------- |
+| Framework        | NestJS 11             |
+| Język            | TypeScript 5.7        |
+| Baza danych      | PostgreSQL            |
+| ORM              | Prisma 7.4            |
+| Real-time        | Socket.IO (WebSocket) |
+| Dokumentacja API | Swagger / OpenAPI     |
+| Package manager  | pnpm                  |
+| Testy            | Jest (unit + e2e)     |
+
+---
+
+## Aktualny stan projektu
+
+### Co jest już gotowe
+
+- **Inicjalizacja aplikacji NestJS** - `main.ts` z bootstrapem i konfiguracją Swaggera
+- **Swagger UI** - dostępny pod `/api` w środowiskach innych niż production, uwierzytelnianie przez cookie `connect.sid`
+- **Schema bazy danych (Prisma)** - pełny schemat z modelami:
+  - `User` - konta użytkowników (email, hasło, avatar, status online/offline/away)
+  - `Conversation` - konwersacje (direct message lub grupowe)
+  - `Message` - wiadomości w konwersacjach
+  - `ConversationParticipant` - relacja many-to-many użytkownik ↔ konwersacja (z rolą: member/admin)
+  - `Session` - sesje użytkowników z obsługą revoke i expiry
+- **Pierwsza migracja** - tabele stworzone w bazie (`20260226204734_init`)
+- **Konfiguracja środowiska** - `.env` z `DATABASE_URL`, `PORT` i `NODE_ENV`
+- **Narzędzia deweloperskie** - ESLint, Prettier, tsconfig
+
+### Czego jeszcze brakuje
+
+- Moduł autentykacji (rejestracja, logowanie, sesje)
+- Moduł użytkowników (CRUD, zarządzanie profilem, status)
+- Moduł konwersacji (tworzenie, dodawanie uczestników)
+- Moduł wiadomości (wysyłanie, historia, oznaczanie jako przeczytane)
+- WebSocket Gateway (real-time wiadomości, status online)
+- Instalacja brakujących pakietów (patrz sekcja poniżej)
+
+---
+
+## Schemat bazy danych
+
+```
+User ─────────────────────────────────────────┐
+ │  id, firstName, lastName, email, password   │
+ │  avatar, status, createdAt                  │
+ │                                             │
+ ├──< Message (senderId)                       │
+ │                                             │
+ ├──< ConversationParticipant (userId) >──< Conversation
+ │       role, joinedAt                         │  id, name, type, createdAt
+ │                                             │
+ └──< Session                                 └──< Message (conversationId)
+       id, expiredAt, revokedAt                     id, content, isRead, createAt
 ```
 
-## Compile and run the project
+---
+
+## Planowane funkcjonalności
+
+### Autentykacja
+
+- Rejestracja konta (email + hasło z hashowaniem bcrypt)
+- Logowanie / wylogowanie
+- Sesje przechowywane w bazie (model `Session`), uwierzytelnianie przez cookie
+- Ochrona endpointów przez Guard
+
+### Użytkownicy
+
+- Pobieranie profilu własnego i innych użytkowników
+- Edycja profilu (avatar, imię, nazwisko)
+- Status użytkownika - `online` / `offline` / `away` zarządzany przez WebSocket
+
+### Konwersacje
+
+- Tworzenie konwersacji 1:1 (direct message)
+- Tworzenie konwersacji grupowych z nazwą
+- Lista konwersacji zalogowanego użytkownika
+- Dodawanie / usuwanie uczestników z grupy
+- Role uczestników: `member` / `admin`
+
+### Wiadomości
+
+- Wysyłanie wiadomości przez REST (zapis do bazy)
+- Wysyłanie wiadomości przez WebSocket (real-time delivery)
+- Historia wiadomości z paginacją
+- Oznaczanie wiadomości jako przeczytane (`isRead`)
+
+### WebSocket (Socket.IO)
+
+- Połączenie i autentykacja przez WebSocket
+- Eventy: `message:send`, `message:received`, `user:status`, `conversation:join`
+- Pokoje (rooms) per konwersacja
+- Broadcast statusu online/offline
+
+---
+
+## Pakiety do dodania
+
+Pakiety wymagane do implementacji planowanych funkcji:
 
 ```bash
-# development
-$ pnpm run start
+# Runtime
+pnpm add @prisma/client @nestjs/websockets @nestjs/platform-socket.io socket.io
+pnpm add bcrypt @types/bcrypt
+pnpm add class-validator class-transformer
+pnpm add @nestjs/config
 
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+# Opcjonalnie
+pnpm add helmet  # security headers
 ```
 
-## Run tests
+---
+
+## Struktura modułów (docelowa)
+
+```
+src/
+├── auth/
+│   ├── auth.module.ts
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── auth.guard.ts
+│   └── dto/
+│       ├── register.dto.ts
+│       └── login.dto.ts
+├── users/
+│   ├── users.module.ts
+│   ├── users.controller.ts
+│   ├── users.service.ts
+│   └── dto/
+├── conversations/
+│   ├── conversations.module.ts
+│   ├── conversations.controller.ts
+│   ├── conversations.service.ts
+│   └── dto/
+├── messages/
+│   ├── messages.module.ts
+│   ├── messages.controller.ts
+│   ├── messages.service.ts
+│   └── dto/
+├── chat/
+│   ├── chat.module.ts
+│   └── chat.gateway.ts          ← WebSocket gateway
+├── prisma/
+│   ├── prisma.module.ts
+│   └── prisma.service.ts
+├── app.module.ts
+└── main.ts
+```
+
+---
+
+## Uruchomienie projektu
+
+### Wymagania
+
+- Node.js 20+
+- pnpm
+- PostgreSQL
+
+### Instalacja
 
 ```bash
-# unit tests
-$ pnpm run test
+pnpm install
+```
+
+### Konfiguracja środowiska
+
+Skopiuj `.env` i uzupełnij wartości:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/chatapp?schema=public"
+PORT=5001
+NODE_ENV="develop"
+```
+
+### Migracje bazy danych
+
+```bash
+# Zastosuj migracje
+pnpm prisma migrate dev
+
+# Wygeneruj klienta Prisma
+pnpm prisma generate
+```
+
+### Uruchomienie
+
+```bash
+# Tryb developerski (watch)
+pnpm start:dev
+
+# Tryb produkcyjny
+pnpm start:prod
+```
+
+### Swagger UI
+
+Po uruchomieniu dostępny pod: `http://localhost:5001/api`
+
+---
+
+## Testy
+
+```bash
+# Testy jednostkowe
+pnpm test
+
+# Testy e2e
+pnpm test:e2e
+
+# Pokrycie kodu
+pnpm test:cov
+```
+
+---
+
+## 🇬🇧 English
+
+A real-time chat application enabling communication between friends - in both 1:1 and group conversations.
+
+## Tech Stack
+
+| Layer       | Technology            |
+| ----------- | --------------------- |
+| Framework   | NestJS 11             |
+| Language    | TypeScript 5.7        |
+| Database    | PostgreSQL            |
+| ORM         | Prisma 7.4            |
+| Real-time   | Socket.IO (WebSocket) |
+| API Docs    | Swagger / OpenAPI     |
+| Package mgr | pnpm                  |
+| Testing     | Jest (unit + e2e)     |
+
+---
+
+## Current Project Status
+
+### What's already done
+
+- **NestJS application bootstrap** - `main.ts` with app bootstrap and Swagger configuration
+- **Swagger UI** - available at `/api` in non-production environments, authenticated via `connect.sid` cookie
+- **Database schema (Prisma)** - full schema with models:
+  - `User` - user accounts (email, password, avatar, online/offline/away status)
+  - `Conversation` - conversations (direct message or group)
+  - `Message` - messages within conversations
+  - `ConversationParticipant` - many-to-many relation user ↔ conversation (with role: member/admin)
+  - `Session` - user sessions with revoke and expiry support
+- **First migration** - tables created in the database (`20260226204734_init`)
+- **Environment configuration** - `.env` with `DATABASE_URL`, `PORT` and `NODE_ENV`
+- **Developer tooling** - ESLint, Prettier, tsconfig
+
+### What's still missing
+
+- Authentication module (registration, login, sessions)
+- Users module (CRUD, profile management, status)
+- Conversations module (creation, adding participants)
+- Messages module (sending, history, marking as read)
+- WebSocket Gateway (real-time messages, online status)
+- Installation of missing packages (see section below)
+
+---
+
+## Database Schema
+
+```
+User ─────────────────────────────────────────┐
+ │  id, firstName, lastName, email, password   │
+ │  avatar, status, createdAt                  │
+ │                                             │
+ ├──< Message (senderId)                       │
+ │                                             │
+ ├──< ConversationParticipant (userId) >──< Conversation
+ │       role, joinedAt                         │  id, name, type, createdAt
+ │                                             │
+ └──< Session                                 └──< Message (conversationId)
+       id, expiredAt, revokedAt                     id, content, isRead, createAt
+```
+
+---
+
+## Planned Features
+
+### Authentication
+
+- Account registration (email + password with bcrypt hashing)
+- Login / logout
+- Sessions stored in the database (`Session` model), authenticated via cookie
+- Endpoint protection via Guard
+
+### Users
+
+- Fetching own and other users' profiles
+- Profile editing (avatar, first name, last name)
+- User status - `online` / `offline` / `away` managed via WebSocket
+
+### Conversations
+
+- Creating 1:1 conversations (direct messages)
+- Creating named group conversations
+- List of logged-in user's conversations
+- Adding / removing participants from a group
+- Participant roles: `member` / `admin`
+
+### Messages
+
+- Sending messages via REST (saved to database)
+- Sending messages via WebSocket (real-time delivery)
+- Message history with pagination
+- Marking messages as read (`isRead`)
+
+### WebSocket (Socket.IO)
+
+- Connection and authentication via WebSocket
+- Events: `message:send`, `message:received`, `user:status`, `conversation:join`
+- Rooms per conversation
+- Online/offline status broadcast
+
+---
+
+## Packages to Add
+
+Packages required for implementing planned features:
+
+```bash
+# Runtime
+pnpm add @prisma/client @nestjs/websockets @nestjs/platform-socket.io socket.io
+pnpm add bcrypt @types/bcrypt
+pnpm add class-validator class-transformer
+pnpm add @nestjs/config
+
+# Optional
+pnpm add helmet  # security headers
+```
+
+---
+
+## Target Module Structure
+
+```
+src/
+├── auth/
+│   ├── auth.module.ts
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── auth.guard.ts
+│   └── dto/
+│       ├── register.dto.ts
+│       └── login.dto.ts
+├── users/
+│   ├── users.module.ts
+│   ├── users.controller.ts
+│   ├── users.service.ts
+│   └── dto/
+├── conversations/
+│   ├── conversations.module.ts
+│   ├── conversations.controller.ts
+│   ├── conversations.service.ts
+│   └── dto/
+├── messages/
+│   ├── messages.module.ts
+│   ├── messages.controller.ts
+│   ├── messages.service.ts
+│   └── dto/
+├── chat/
+│   ├── chat.module.ts
+│   └── chat.gateway.ts          ← WebSocket gateway
+├── prisma/
+│   ├── prisma.module.ts
+│   └── prisma.service.ts
+├── app.module.ts
+└── main.ts
+```
+
+---
+
+## Running the Project
+
+### Requirements
+
+- Node.js 20+
+- pnpm
+- PostgreSQL
+
+### Installation
+
+```bash
+pnpm install
+```
+
+### Environment Configuration
+
+Copy `.env` and fill in the values:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/chatapp?schema=public"
+PORT=5001
+NODE_ENV="develop"
+```
+
+### Database Migrations
+
+```bash
+# Apply migrations
+pnpm prisma migrate dev
+
+# Generate Prisma client
+pnpm prisma generate
+```
+
+### Running
+
+```bash
+# Development mode (watch)
+pnpm start:dev
+
+# Production mode
+pnpm start:prod
+```
+
+### Swagger UI
+
+After starting, available at: `http://localhost:5001/api`
+
+---
+
+## Tests
+
+```bash
+# Unit tests
+pnpm test
 
 # e2e tests
-$ pnpm run test:e2e
+pnpm test:e2e
 
-# test coverage
-$ pnpm run test:cov
+# Code coverage
+pnpm test:cov
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
