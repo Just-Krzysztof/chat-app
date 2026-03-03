@@ -12,7 +12,7 @@ export class ConversationsController {
     return this.conversationsService.getUserConversation(req.user?.id as string)
   }
 
-  @Get('/conversations/:id/messages')
+  @Get('/:id/messages')
   @UseGuards(SessionGuard)
   async getMessagesFromConversation(
     @Req() req: Request,
