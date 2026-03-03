@@ -6,10 +6,19 @@ import { AuthModule } from './auth/auth.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { UserController } from './user/user.controller'
 import { UserModule } from './user/user.module'
+import { ChatGatewayGateway } from './chat-gateway/chat-gateway.gateway'
+import { ConversationsController } from './conversations/conversations.controller'
+import { ConversationsService } from './conversations/conversations.service'
+import { ConversationsModule } from './conversations/conversations.module'
 
 @Module({
-  imports: [AuthModule, PrismaModule, UserModule],
-  controllers: [AppController, UserController],
-  providers: [AppService, AuthService],
+  imports: [AuthModule, PrismaModule, UserModule, ConversationsModule],
+  controllers: [AppController, UserController, ConversationsController],
+  providers: [
+    AppService,
+    AuthService,
+    ChatGatewayGateway,
+    ConversationsService,
+  ],
 })
 export class AppModule {}
