@@ -89,5 +89,7 @@ export class ChatGateway implements OnGatewayConnection {
     if (!exists) return
 
     client.join(conversationId)
+
+    return { success: true }
   }
 }

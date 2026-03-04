@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { Socket } from 'socket.io'
 import { PrismaService } from 'src/prisma/prisma.service'
 
 @Injectable()
@@ -81,7 +82,11 @@ export class ConversationsService {
     })
   }
 
-  async createDirectConversation(currentUserId: string, otherUserId: string) {
+  async createDirectConversation(
+    currentUserId: string,
+    otherUserId: string,
+    client?: Socket
+  ) {
     if (currentUserId === otherUserId)
       throw new BadRequestException('Cannot caht with yourself')
 
@@ -93,35 +98,62 @@ export class ConversationsService {
 
     const directKey = this.generateDirectKey(currentUserId, otherUserId)
 
-    try {
-      return await this.prisma.$transaction(async tx => {
-        const existing = await tx.conversation.findUnique({
-          where: { directKey },
-          include: { participants: true },
-        })
-
-        if (existing) return existing
-
-        return tx.conversation.create({
-          data: {
-            type: 'direct',
-            directKey,
-            participants: {
-              create: [{ userId: currentUserId }, { userId: otherUserId }],
-            },
-          },
-          include: { participants: true },
-        })
+    const conversation = await this.prisma.$transaction(async tx => {
+      const existing = await tx.conversation.findUnique({
+        where: { directKey },
+        include: { participants: true },
       })
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (error.code === 'P2002') {
-        return this.prisma.conversation.findUnique({
-          where: { directKey },
-          include: { participants: true },
-        })
-      }
-      throw error
+
+      if (existing) return existing
+
+      return tx.conversation.create({
+        data: {
+          type: 'direct',
+          directKey,
+          participants: {
+            create: [{ userId: currentUserId }, { userId: otherUserId }],
+          },
+        },
+        include: { participants: true },
+      })
+    })
+    if (client) {
+      client.join(conversation.id)
     }
+    return conversation
+
+    // try {
+    //   return await this.prisma.$transaction(async tx => {
+    //     const existing = await tx.conversation.findUnique({
+    //       where: { directKey },
+    //       include: { participants: true },
+    //     })
+
+    //     if (existing) return existing
+
+    //     return tx.conversation.create({
+    //       data: {
+    //         type: 'direct',
+    //         directKey,
+    //         participants: {
+    //           create: [{ userId: currentUserId }, { userId: otherUserId }],
+    //         },
+    //       },
+    //       include: { participants: true },
+    //     })
+    //   })
+    //   if (client) {
+
+    //   }
+    // } catch (error) {
+    //   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    //   if (error.code === 'P2002') {
+    //     return this.prisma.conversation.findUnique({
+    //       where: { directKey },
+    //       include: { participants: true },
+    //     })
+    //   }
+    //   throw error
+    // }
   }
 }
