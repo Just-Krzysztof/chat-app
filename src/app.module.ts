@@ -10,9 +10,16 @@ import { ChatGateway } from './conversations/gateway/chat.gateway'
 import { ConversationsController } from './conversations/conversations.controller'
 import { ConversationsService } from './conversations/conversations.service'
 import { ConversationsModule } from './conversations/conversations.module'
+import { ConfigModule } from '@nestjs/config'
 
 @Module({
-  imports: [AuthModule, PrismaModule, UserModule, ConversationsModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthModule,
+    PrismaModule,
+    UserModule,
+    ConversationsModule,
+  ],
   controllers: [AppController, UserController, ConversationsController],
   providers: [AppService, AuthService, ChatGateway, ConversationsService],
 })

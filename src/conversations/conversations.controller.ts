@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common'
+import { Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common'
 import { SessionGuard } from 'src/auth/session.guard'
 import { Request } from 'express'
 import { ConversationsService } from './conversations.service'
@@ -12,7 +12,7 @@ export class ConversationsController {
     return this.conversationsService.getUserConversation(req.user?.id as string)
   }
 
-  @Get('/:id/messages')
+  @Get(':id/messages')
   @UseGuards(SessionGuard)
   async getMessagesFromConversation(
     @Req() req: Request,
@@ -21,6 +21,15 @@ export class ConversationsController {
     return this.conversationsService.getMessageFromConversation(
       req.user?.id as string,
       id
+    )
+  }
+
+  @Post('direct/:userId')
+  @UseGuards(SessionGuard)
+  createDirect(@Req() req: Request, @Param('userId') userId: string) {
+    return this.conversationsService.createDirectConversation(
+      req.user?.id as string,
+      userId
     )
   }
 }
