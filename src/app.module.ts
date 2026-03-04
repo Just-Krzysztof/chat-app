@@ -11,6 +11,7 @@ import { ConversationsController } from './conversations/conversations.controlle
 import { ConversationsService } from './conversations/conversations.service'
 import { ConversationsModule } from './conversations/conversations.module'
 import { ConfigModule } from '@nestjs/config'
+import { UserService } from './user/user.service'
 
 @Module({
   imports: [
@@ -21,6 +22,12 @@ import { ConfigModule } from '@nestjs/config'
     ConversationsModule,
   ],
   controllers: [AppController, UserController, ConversationsController],
-  providers: [AppService, AuthService, ChatGateway, ConversationsService],
+  providers: [
+    AppService,
+    AuthService,
+    ChatGateway,
+    ConversationsService,
+    UserService,
+  ],
 })
 export class AppModule {}
