@@ -32,6 +32,10 @@ export class ChatGateway implements OnGatewayConnection {
       client.disconnect()
       return
     }
+    await this.prisma.user.update({
+      where: { id: session?.userId },
+      data: { status: 'online' },
+    })
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     client.data.userId = session.userId
     client.join(session.userId)
